@@ -15,6 +15,8 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useStudent } from '@/contexts/StudentContext';
 import { supabase } from '@/integrations/supabase/client';
+import type { StudentProfile } from '@/types/profile';
+import { CROUS_LYON_OPTIONS } from '@/types/profile';
 import ProfileAvatar from '@/components/ProfileAvatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -157,6 +159,20 @@ const ProfilPage = () => {
             onChange={(e) => updateProfile({ lastName: e.target.value })}
             className="mt-1"
           />
+        </div>
+        <div>
+          <Label>CROUS Préféré (Lyon)</Label>
+          <select
+            value={profile.crousName || 'r1267'}
+            onChange={(e) => updateProfile({ crousName: e.target.value })}
+            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors mt-1"
+          >
+            {CROUS_LYON_OPTIONS.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
         <div>
           <Label>Pseudo (classements)</Label>

@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useStudent } from '@/contexts/StudentContext';
 import { TASKS_DATA } from '@/contexts/StudentContext';
-import { MODULES_CONFIG_S2 } from '@/lib/constants';
+// removed hardcoded modules
 import { calcAvg, getGradeColor } from '@/lib/helpers';
 import ProfileAvatar from '@/components/ProfileAvatar';
 import WeatherWidget from '@/components/WeatherWidget';
@@ -31,6 +31,7 @@ const Dashboard = () => {
     allEvents,
     s2Grades,
     announcements,
+    modules,
   } = useStudent();
 
   // Sécurité : valeurs par défaut si undefined
@@ -64,7 +65,7 @@ const Dashboard = () => {
   }, 0);
   const weekExams = upcomingTasks.filter(t => t.diff < 7 * 24 * 60 * 60 * 1000).length;
 
-  const atRiskUEs = MODULES_CONFIG_S2.map(m => ({
+  const atRiskUEs = modules.map(m => ({
     ...m,
     avg: parseFloat(calcAvg(safeS2Grades[m.id]) || ''),
   }))

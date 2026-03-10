@@ -1,19 +1,20 @@
 import { Copy, Check } from 'lucide-react';
 import { useState } from 'react';
-import { MODULES_CONFIG_S2 } from '@/lib/constants';
 import { calcAvg, type Grade } from '@/lib/helpers';
+import type { ModuleConfig } from '@/lib/constants';
 
 interface GradeExportProps {
   gradesMap: Record<string, Grade[]>;
   stats: { avg21: string | null; avg22: string | null; global: string | null };
+  modules: ModuleConfig[];
 }
 
-const GradeExport = ({ gradesMap, stats }: GradeExportProps) => {
+const GradeExport = ({ gradesMap, stats, modules }: GradeExportProps) => {
   const [copied, setCopied] = useState(false);
 
   const exportGrades = () => {
-    let text = "📊 Mes Notes GEII - S2\n\n";
-    MODULES_CONFIG_S2.forEach(m => {
+    let text = "📊 Mes Notes GEII/TCSI - S2\n\n";
+    modules.forEach(m => {
       const avg = calcAvg(gradesMap[m.id]);
       if (avg) text += `${m.label} (${m.id}): ${avg}/20\n`;
     });

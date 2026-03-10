@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Target, Search, Archive } from 'lucide-react';
-import { MODULES_CONFIG_S2 } from '@/lib/constants';
+// removed hardcoded MODULES_CONFIG_S2 import
 import { type Grade } from '@/lib/helpers';
 import type { ModuleConfig } from '@/lib/constants';
 import UESection from '@/components/UESection';
@@ -20,6 +20,7 @@ interface NotesViewProps {
   onModuleClick: (mod: ModuleConfig) => void;
   onAbsenceUpdate: (modId: string, delta: number) => void;
   onHistoryUpdate: (sem: number, key: string, val: string) => void;
+  modules: ModuleConfig[];
 }
 
 const SemesterSelector = ({ current, onChange }: { current: number; onChange: (s: number) => void }) => (
@@ -82,7 +83,7 @@ const TargetSimulator = () => {
   );
 };
 
-const NotesView = ({ semester, setSemester, visibleUEs, setVisibleUEs, s2Grades, absences, stats, history, onModuleClick, onAbsenceUpdate, onHistoryUpdate }: NotesViewProps) => {
+const NotesView = ({ semester, setSemester, visibleUEs, setVisibleUEs, s2Grades, absences, stats, history, onModuleClick, onAbsenceUpdate, onHistoryUpdate, modules }: NotesViewProps) => {
   const [search, setSearch] = useState('');
 
   return (
@@ -92,7 +93,7 @@ const NotesView = ({ semester, setSemester, visibleUEs, setVisibleUEs, s2Grades,
       {semester === 2 ? (
         <div className="space-y-6">
           {/* Absence Alert */}
-          <AbsenceAlert absences={absences} />
+          <AbsenceAlert absences={absences} modules={modules} />
 
           {/* UE Toggles + Export */}
           <div className="flex gap-2 mb-2">
@@ -124,15 +125,15 @@ const NotesView = ({ semester, setSemester, visibleUEs, setVisibleUEs, s2Grades,
                 className="w-full bg-card border border-foreground/5 rounded-xl pl-9 pr-3 py-2.5 text-xs outline-none placeholder-foreground/20"
               />
             </div>
-            <GradeExport gradesMap={s2Grades} stats={{ avg21: stats.avg21, avg22: stats.avg22, global: stats.global || null }} />
+            <GradeExport gradesMap={s2Grades} stats={{ avg21: stats.avg21, avg22: stats.avg22, global: stats.global || null }} modules={modules} />
           </div>
 
           <TargetSimulator />
 
           <GPACalculator currentAvg={stats.global || null} history={history} />
 
-          {visibleUEs[21] && <UESection title="UE21 - Concevoir" ueKey="coef21" avg={stats.avg21} modules={MODULES_CONFIG_S2} gradesMap={s2Grades} absences={absences} onModuleClick={onModuleClick} onAbsenceUpdate={onAbsenceUpdate} search={search} />}
-          {visibleUEs[22] && <UESection title="UE22 - Vérifier" ueKey="coef22" avg={stats.avg22} modules={MODULES_CONFIG_S2} gradesMap={s2Grades} absences={absences} onModuleClick={onModuleClick} onAbsenceUpdate={onAbsenceUpdate} search={search} />}
+          {visibleUEs[21] && <UESection title="UE21 - Concevoir" ueKey="coef21" avg={stats.avg21} modules={modules} gradesMap={s2Grades} absences={absences} onModuleClick={onModuleClick} onAbsenceUpdate={onAbsenceUpdate} search={search} />}
+          {visibleUEs[22] && <UESection title="UE22 - Vérifier" ueKey="coef22" avg={stats.avg22} modules={modules} gradesMap={s2Grades} absences={absences} onModuleClick={onModuleClick} onAbsenceUpdate={onAbsenceUpdate} search={search} />}
         </div>
       ) : (
         <div className="space-y-4">

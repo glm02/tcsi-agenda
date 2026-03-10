@@ -1,4 +1,4 @@
-import { MODULES_CONFIG_S2 } from './constants';
+import { MODULES_CONFIG_GEII_S2, MODULES_CONFIG_TCSI_S2 } from './constants';
 
 export interface Grade {
   id: string;
@@ -27,6 +27,7 @@ export const getGradeColor = (val: string | null): string => {
 };
 
 export const getModuleName = (id: string): string => {
-  const mod = MODULES_CONFIG_S2.find(m => m.id === id);
+  const allModules = [...MODULES_CONFIG_GEII_S2, ...MODULES_CONFIG_TCSI_S2];
+  const mod = allModules.find(m => m.id === id);
   return mod ? mod.label : id;
 };

@@ -1,7 +1,7 @@
 import { Plus } from 'lucide-react';
 import { useStudent } from '@/contexts/StudentContext';
 import NotesView from '@/components/views/NotesView';
-import { MODULES_CONFIG_S2 } from '@/lib/constants';
+// removed MODULES_CONFIG_S2 import
 import type { ModuleConfig } from '@/lib/constants';
 
 const NotesPage = () => {
@@ -17,6 +17,7 @@ const NotesPage = () => {
     setSelectedModule,
     updateAbsence,
     updateHistory,
+    modules,
   } = useStudent();
 
   return (
@@ -25,7 +26,7 @@ const NotesPage = () => {
         <h1 className="text-2xl font-bold">Notes</h1>
         <button
           type="button"
-          onClick={() => setSelectedModule(MODULES_CONFIG_S2[0] as ModuleConfig)}
+          onClick={() => setSelectedModule(modules[0] as ModuleConfig)}
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90"
         >
           <Plus size={18} /> Ajouter une note
@@ -43,6 +44,7 @@ const NotesPage = () => {
         onModuleClick={(mod) => setSelectedModule(mod)}
         onAbsenceUpdate={updateAbsence}
         onHistoryUpdate={updateHistory}
+        modules={modules}
       />
     </div>
   );

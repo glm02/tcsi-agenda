@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Trophy, Eye, EyeOff } from 'lucide-react';
 import { useStudent } from '@/contexts/StudentContext';
 import { supabase } from '@/integrations/supabase/client';
-import { MODULES_CONFIG_S2 } from '@/lib/constants';
+// removed hardcoded modules import
 import { calcAvg } from '@/lib/helpers';
 
 type Tab = 'general' | 'ue';
@@ -17,7 +17,7 @@ interface RankEntry {
 }
 
 const ClassementPage = () => {
-  const { profile, stats, rankingPosition, rankingTotal, updateProfile } = useStudent();
+  const { profile, stats, rankingPosition, rankingTotal, updateProfile, modules } = useStudent();
   const [tab, setTab] = useState<Tab>('general');
   const [generalRanking, setGeneralRanking] = useState<RankEntry[]>([]);
   const [ueRanking, setUeRanking] = useState<Record<string, RankEntry[]>>({});
@@ -35,7 +35,7 @@ const ClassementPage = () => {
       const profileMap = Object.fromEntries(profiles.map(p => [p.user_id, p]));
       const userSums: Record<string, { sum: number; coef: number }> = {};
       grades.forEach((g: { user_id: string; module_id: string; value: number; coef: number }) => {
-        const mod = MODULES_CONFIG_S2.find(m => m.id === g.module_id);
+        const mod = modules.find(m => m.id === g.module_id);
         if (!mod) return;
         const c = mod.coef21 + mod.coef22;
         if (!userSums[g.user_id]) userSums[g.user_id] = { sum: 0, coef: 0 };
@@ -62,7 +62,7 @@ const ClassementPage = () => {
       setGeneralRanking(general as RankEntry[]);
 
       const byModule: Record<string, RankEntry[]> = {};
-      MODULES_CONFIG_S2.forEach(m => {
+      modules.forEach(m => {
         const modGrades = grades.filter((g: { module_id: string }) => g.module_id === m.id);
         const userAvg: Record<string, { sum: number; coef: number }> = {};
         modGrades.forEach((g: { user_id: string; value: number; coef: number }) => {
@@ -91,7 +91,7 @@ const ClassementPage = () => {
       setLoading(false);
     };
     loadRankings();
-  }, []);
+  }, [modules]);
 
   const displayName = (e: RankEntry) => e.pseudo?.trim() || `${e.first_name} ${e.last_name || ''}`.trim() || 'Anonyme';
 
@@ -155,7 +155,7 @@ const ClassementPage = () => {
         </div>
       ) : (
         <div className="space-y-6">
-          {MODULES_CONFIG_S2.map(m => (
+          {modules.map(m => (
             <div key={m.id} className="rounded-2xl border border-border overflow-hidden">
               <h3 className="p-3 bg-muted/50 font-semibold text-sm">{m.label}</h3>
               <ul className="divide-y divide-border">

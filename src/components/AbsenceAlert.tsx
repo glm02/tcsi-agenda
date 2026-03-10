@@ -1,12 +1,13 @@
 import { AlertTriangle } from 'lucide-react';
-import { MODULES_CONFIG_S2 } from '@/lib/constants';
+import type { ModuleConfig } from '@/lib/constants';
 
 interface AbsenceAlertProps {
   absences: Record<string, number>;
+  modules: ModuleConfig[];
 }
 
-const AbsenceAlert = ({ absences }: AbsenceAlertProps) => {
-  const warnings = MODULES_CONFIG_S2
+const AbsenceAlert = ({ absences, modules }: AbsenceAlertProps) => {
+  const warnings = modules
     .filter(m => (absences[m.id] || 0) >= 3)
     .map(m => ({ label: m.label, count: absences[m.id] }));
 

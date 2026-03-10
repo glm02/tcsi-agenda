@@ -1,12 +1,13 @@
-import { MODULES_CONFIG_S2 } from '@/lib/constants';
 import { calcAvg, type Grade } from '@/lib/helpers';
+import type { ModuleConfig } from '@/lib/constants';
 
 interface GradeChartProps {
   gradesMap: Record<string, Grade[]>;
+  modules: ModuleConfig[];
 }
 
-const GradeChart = ({ gradesMap }: GradeChartProps) => {
-  const data = MODULES_CONFIG_S2
+const GradeChart = ({ gradesMap, modules }: GradeChartProps) => {
+  const data = modules
     .map(m => ({ short: m.short, avg: parseFloat(calcAvg(gradesMap[m.id]) || '0') }))
     .filter(d => d.avg > 0);
 

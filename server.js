@@ -5,34 +5,67 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import fs from 'fs';
+import { createClient } from '@supabase/supabase-js';
 
-// Load environment variables
 dotenv.config();
 
-// Get directory name in ES module
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Initialize Express app
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Initialize Supabase Client for the server
+const supabaseUrl = process.env.VITE_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+let supabase = null;
+if (supabaseUrl && supabaseServiceKey) {
+  supabase = createClient(supabaseUrl, supabaseServiceKey);
+} else {
+  console.warn('⚠️ Supabase credentials not found in env. DB features will not work.');
+}
 
 // Initialize Telegram Bot
 const botToken = process.env.TELEGRAM_BOT_TOKEN;
 let bot = null;
 
+const getCrousMenu = async (crousCode) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const res = await fetch(`https://api.croustillant.menu/v1/restaurants/${crousCode}/menu/${today}`);
+    const data = await res.json();
+    if (!data.success || !data.data) {
+      return "Aucun menu disponible pour aujourd'hui.";
+    }
+    const repas = data.data.repas.find(r => r.nom === 'Déjeuner') || data.data.repas[0];
+    if (!repas) return "Menu non disponible.";
+    
+    let menuText = `🍽️ *Menu - ${data.data.nom}*\n\n`;
+    repas.plats.forEach(cat => {
+      menuText += `*${cat.nom}*\n`;
+      cat.liste.forEach(plat => {
+        menuText += `- ${plat.nom}\n`;
+      });
+      menuText += '\n';
+    });
+    return menuText;
+  } catch (err) {
+    console.error("Crous fetch error:", err);
+    return "Erreur lors de la récupération du menu.";
+  }
+};
+
 if (botToken) {
   bot = new Telegraf(botToken);
 
-  // Bot commands
   bot.start((ctx) => {
-    ctx.reply('👋 Bonjour ! Je suis le bot de GEII-OS.\n\nJe suis là pour t\'aider dans ton quotidien étudiant. Tape /help pour voir ce que je peux faire !');
+    ctx.reply('👋 Bonjour ! Je suis l\'assistant de GEII-OS.\n\nAssocie ton compte Telegram en envoyant ton email étudiant.\n\nTape /help pour voir ce que je peux faire !');
   });
 
   bot.help((ctx) => {
     ctx.reply(
       '📚 *Commandes disponibles* :\n\n' +
-      '/crous - Obtenir le menu du CROUS du jour\n' +
+      '/crous - Obtenir le menu de ton CROUS favori\n' +
       '/qcm - Voir tes QCM en attente\n' +
       '/status - Vérifier que l\'OS GEII fonctionne',
       { parse_mode: 'Markdown' }
@@ -43,14 +76,19 @@ if (botToken) {
     ctx.reply('✅ Le serveur GEII-OS est en ligne et opérationnel !');
   });
 
-  bot.command('crous', (ctx) => {
-    // TODO: Fetch real CROUS menu data here via an API or scraping
-    ctx.reply('🍽️ *Menu du CROUS du jour* :\n\n- Entrée : Salade de tomates\n- Plat : Poulet Rôti & Frites\n- Dessert : Yaourt nature', { parse_mode: 'Markdown' });
+  bot.command('crous', async (ctx) => {
+    if (!supabase) return ctx.reply('Erreur: Base de données non connectée.');
+    // Ideally, we find the user by their telegram chat id
+    const { data: user } = await supabase.from('profiles').select('crous_name').eq('telegram_chat_id', String(ctx.chat.id)).single();
+    const crousCode = user?.crous_name || '611'; // default to Manu
+    const menu = await getCrousMenu(crousCode);
+    ctx.reply(menu, { parse_mode: 'Markdown' });
   });
 
-  bot.command('qcm', (ctx) => {
-    // TODO: Fetch actual QCM data from your Supabase backend here
-    ctx.reply('📝 *Vos QCM en attente* :\n\n1. Mathématiques : Les intégrales (Échéance: Ce soir 23h59)\n2. Informatique : Les pointeurs en C (Échéance: Demain 18h)', { parse_mode: 'Markdown' });
+  bot.command('qcm', async (ctx) => {
+    if (!supabase) return ctx.reply('Erreur DB.');
+    // Mocking real data until tasks DB is fully structured
+    ctx.reply('📝 *Vos Prochaines dates* :\n\n1. Rendu Projet (Semaine prochaine)\n2. DS Math (Lundi)', { parse_mode: 'Markdown' });
   });
 
   // Launch bot
@@ -60,40 +98,44 @@ if (botToken) {
     console.error('❌ Failed to start Telegram bot:', err.message);
   });
 
-  // Enable graceful stop
   process.once('SIGINT', () => bot.stop('SIGINT'));
   process.once('SIGTERM', () => bot.stop('SIGTERM'));
 
   // --- CRON JOBS ---
-  // Format: second minute hour day-of-month month day-of-week
-  
-  // 1. CROUS Menu Reminder (Every weekday at 11:00 AM)
-  cron.schedule('0 11 * * 1-5', async () => {
+  // 1. CROUS Menu Reminder (Every weekday at 11:15 AM)
+  cron.schedule('15 11 * * 1-5', async () => {
     console.log('🕒 Running CROUS Menu Broadcast');
-    // TODO: Get a list of student Chat IDs who subscribed from your database
-    const chatIdsToNotify = []; // e.g., [123456789, 987654321]
+    if (!supabase) return;
+    const { data: profiles } = await supabase.from('profiles').select('telegram_chat_id, crous_name').not('telegram_chat_id', 'is', null);
     
-    for (const chatId of chatIdsToNotify) {
-      try {
-        await bot.telegram.sendMessage(chatId, '🔔 *Rappel Menu CROUS* (11h00) :\n\n- Entrée : Salade de tomates\n- Plat : Poulet Rôti & Frites\n- Dessert : Yaourt nature', { parse_mode: 'Markdown' });
-      } catch (err) {
-        console.error(`Failed to send CROUS menu to ${chatId}:`, err);
+    if (profiles) {
+      for (const p of profiles) {
+        if (!p.telegram_chat_id) continue;
+        const crousCode = p.crous_name || '611';
+        const menu = await getCrousMenu(crousCode);
+        try {
+          await bot.telegram.sendMessage(p.telegram_chat_id, '🔔 *Repas de ce midi* :\n\n' + menu, { parse_mode: 'Markdown' });
+        } catch (err) {
+          console.error(`Failed to send CROUS menu to ${p.telegram_chat_id}:`, err.message);
+        }
       }
     }
   });
 
   // 2. QCM Reminder (Every day at 18:00)
   cron.schedule('0 18 * * *', async () => {
-    console.log('🕒 Running QCM Reminder Broadcast');
-    // TODO: Get list of students and their pending QCMs from DB
-    const chatIdsToNotify = []; 
-    
-    for (const chatId of chatIdsToNotify) {
+    console.log('🕒 Running Tasks Reminder Broadcast');
+    if (!supabase) return;
+    const { data: profiles } = await supabase.from('profiles').select('telegram_chat_id').not('telegram_chat_id', 'is', null);
+    if (profiles) {
+      for (const p of profiles) {
+        if (!p.telegram_chat_id) continue;
         try {
-          await bot.telegram.sendMessage(chatId, '🔔 *Rappel QCM* (18h00) :\nN\'oublie pas tes QCM en attente ! Tape /qcm pour voir la liste.', { parse_mode: 'Markdown' });
+          await bot.telegram.sendMessage(p.telegram_chat_id, '🔔 *Rappel Quotidien* (18h00) :\nN\'oublie pas d\'aller vérifier ton OS GEII pour avancer sur tes devoirs et projets !', { parse_mode: 'Markdown' });
         } catch (err) {
-          console.error(`Failed to send QCM reminder to ${chatId}:`, err);
+          console.error(`Failed to send reminder to ${p.telegram_chat_id}:`, err.message);
         }
+      }
     }
   });
 
@@ -105,8 +147,6 @@ if (botToken) {
 const distPath = path.join(__dirname, 'dist');
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
-
-  // Handle client-side routing, return all requests to React app
   app.get(/(.*)/, (req, res) => {
     res.sendFile(path.join(distPath, 'index.html'));
   });
@@ -117,7 +157,9 @@ if (fs.existsSync(distPath)) {
   });
 }
 
-// Start Express Server
+// API Routes
+app.get('/api/health', (req, res) => res.json({ status: 'ok', bot: !!bot }));
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🌐 Web server (GEII-OS) is running on port ${PORT}`);
 });

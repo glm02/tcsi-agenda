@@ -10,16 +10,17 @@ interface AppLayoutProps {
 }
 
 const AppLayout = ({ children }: AppLayoutProps) => {
+  const {
+    profileLoaded,
+    profile,
+    s2Grades,
+    selectedModule,
+    setSelectedModule,
+    handleUpdateGrades,
+    isAdmin,
+  } = useStudent();
+
   try {
-    const {
-      profileLoaded,
-      profile,
-      s2Grades,
-      selectedModule,
-      setSelectedModule,
-      handleUpdateGrades,
-      isAdmin,
-    } = useStudent();
 
     if (!profileLoaded) {
       return (

@@ -28,7 +28,7 @@ export interface ModuleConfig {
   cat: string;
 }
 
-export const MODULES_CONFIG_S2: ModuleConfig[] = [
+export const MODULES_CONFIG_GEII_S2: ModuleConfig[] = [
   { id: 'R2.01', short: 'AN2', label: 'Analyse', coef21: 1.1, coef22: 0, cat: 'Fonda' },
   { id: 'R2.02', short: 'CC2', label: 'Culture Com', coef21: 1.1, coef22: 0, cat: 'Trans' },
   { id: 'R2.03', short: 'VE2', label: 'Vie Entr.', coef21: 0.8, coef22: 0, cat: 'Trans' },
@@ -42,6 +42,14 @@ export const MODULES_CONFIG_S2: ModuleConfig[] = [
   { id: 'S2.1', short: 'SAÉ 2.1', label: 'SAÉ CAPA', coef21: 2.5, coef22: 2.5, cat: 'SAÉ' },
   { id: 'S2.2', short: 'SAÉ 2.2', label: 'SAÉ Robot', coef21: 2.5, coef22: 2.5, cat: 'SAÉ' },
   { id: 'PF2', short: 'PORTF', label: 'Portfolio S2', coef21: 1.0, coef22: 1.0, cat: 'SAÉ' },
+];
+
+export const MODULES_CONFIG_TCSI_S2: ModuleConfig[] = [
+  { id: 'TCSI-1', short: 'Maths', label: 'Mathématiques Appliquées', coef21: 1.2, coef22: 1.2, cat: 'Fonda' },
+  { id: 'TCSI-2', short: 'DevWeb', label: 'Développement Web & Objet', coef21: 1.5, coef22: 1.5, cat: 'Tech' },
+  { id: 'TCSI-3', short: 'Réseaux', label: 'Bases des Réseaux', coef21: 1.5, coef22: 1.5, cat: 'Tech' },
+  { id: 'TCSI-4', short: 'Com', label: 'Communication & Anglais', coef21: 1.0, coef22: 1.0, cat: 'Trans' },
+  { id: 'TCSI-SAE', short: 'SAÉ Web', label: 'Projet Dev Web', coef21: 2.0, coef22: 2.0, cat: 'SAÉ' },
 ];
 
 export interface TaskData {

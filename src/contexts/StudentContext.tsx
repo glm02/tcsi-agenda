@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { DEFAULT_ADE, MODULES_CONFIG_S2, TASKS_DATA } from '@/lib/constants';
+import { DEFAULT_ADE, MODULES_CONFIG_GEII_S2, MODULES_CONFIG_TCSI_S2, TASKS_DATA } from '@/lib/constants';
 import { calcAvg, type Grade } from '@/lib/helpers';
 import { parseICS, generateDemoSchedule, type CalendarEvent } from '@/lib/ical-parser';
 import type { ModuleConfig } from '@/lib/constants';
@@ -35,6 +35,7 @@ interface StudentState {
   stats: { avg21: string | null; avg22: string | null; global: string | null };
   rankingPosition: number | null;
   rankingTotal: number | null;
+  modules: ModuleConfig[];
 }
 
 interface StudentActions {
@@ -68,6 +69,7 @@ const StudentContext = createContext<(StudentState & StudentActions & { selected
 
 const safeDefaultContext: StudentState & StudentActions & { selectedModule: ModuleConfig | null } = {
   profile: defaultProfile,
+  modules: MODULES_CONFIG_GEII_S2,
   profileLoaded: true,
   quickNote: '',
   semester: 2,
@@ -115,11 +117,15 @@ export function StudentProvider({ children }: { children: ReactNode }) {
   const [rankingPosition, setRankingPosition] = useState<number | null>(null);
   const [rankingTotal, setRankingTotal] = useState<number | null>(null);
 
+  const modules = useMemo(() => {
+    return profile.filiere === 'TCSI' ? MODULES_CONFIG_TCSI_S2 : MODULES_CONFIG_GEII_S2;
+  }, [profile.filiere]);
+
   const stats = useMemo(() => {
     try {
       let p21 = 0, c21 = 0, p22 = 0, c22 = 0;
       const safeGrades = s2Grades || {};
-      MODULES_CONFIG_S2.forEach(m => {
+      modules.forEach(m => {
         const avg = parseFloat(calcAvg(safeGrades[m.id]) || '');
         if (!isNaN(avg)) {
           if (m.coef21 > 0) { p21 += avg * m.coef21; c21 += m.coef21; }
@@ -133,7 +139,7 @@ export function StudentProvider({ children }: { children: ReactNode }) {
     } catch {
       return { avg21: null, avg22: null, global: null };
     }
-  }, [s2Grades]);
+  }, [s2Grades, modules]);
 
   useEffect(() => {
     if (!user) return;
@@ -178,6 +184,7 @@ export function StudentProvider({ children }: { children: ReactNode }) {
             dashboardPreference: ((row.dashboard_preference as string) || 'grades') as StudentProfile['dashboardPreference'],
             blurGrades: !!row.blur_grades,
             rankingVisible: row.ranking_visible !== false,
+            filiere: ((row.filiere as string) || 'GEII') as StudentProfile['filiere'],
           });
           setQuickNote((row.quick_note as string) || '');
         } else {
@@ -260,12 +267,18 @@ export function StudentProvider({ children }: { children: ReactNode }) {
     };
 
     const loadRanking = async () => {
+      // Pour une vraie filière, il faudrait récupérer la filière de chaque user via une jointure.
+      // Pour l'instant, on calcule le classement avec les modules de l'étudiant actuel
       const { data: gradesData } = await supabase.from('grades').select('user_id, value, coef, module_id');
       if (!gradesData?.length) return;
+      
       const userAverages: Record<string, { sum: number; coef: number }> = {};
+      
       gradesData.forEach((g: { user_id: string; value: number; coef: number; module_id: string }) => {
-        const mod = MODULES_CONFIG_S2.find(m => m.id === g.module_id);
+        // On ne compte que les notes qui font partie de la filière actuelle
+        const mod = modules.find(m => m.id === g.module_id);
         if (!mod) return;
+        
         if (!userAverages[g.user_id]) userAverages[g.user_id] = { sum: 0, coef: 0 };
         userAverages[g.user_id].sum += g.value * (mod.coef21 + mod.coef22);
         userAverages[g.user_id].coef += (mod.coef21 + mod.coef22);
@@ -304,7 +317,7 @@ export function StudentProvider({ children }: { children: ReactNode }) {
       clearTimeout(timeout);
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, modules]);
 
   const fetchAgenda = useCallback(async () => {
     if (!profile.adeUrl) return;
@@ -338,6 +351,7 @@ export function StudentProvider({ children }: { children: ReactNode }) {
       dashboard_preference: newProfile.dashboardPreference ?? 'grades',
       blur_grades: newProfile.blurGrades ?? false,
       ranking_visible: newProfile.rankingVisible ?? true,
+      filiere: newProfile.filiere ?? 'GEII',
     }).eq('user_id', user.id);
   }, [profile, user]);
 
@@ -421,6 +435,7 @@ export function StudentProvider({ children }: { children: ReactNode }) {
       stats: stats || { avg21: null, avg22: null, global: null },
       rankingPosition: rankingPosition ?? null,
       rankingTotal: rankingTotal ?? null,
+      modules,
       setProfile: setProfileState,
       setQuickNote,
       updateProfile,
@@ -449,6 +464,7 @@ export function StudentProvider({ children }: { children: ReactNode }) {
       stats,
       rankingPosition,
       rankingTotal,
+      modules,
       updateProfile,
       updateQuickNote,
       handleUpdateGrades,

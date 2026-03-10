@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { DEFAULT_ADE, MODULES_CONFIG_S2, TASKS_DATA } from '@/lib/constants';
+import { DEFAULT_ADE, MODULES_CONFIG_GEII_S2, TASKS_DATA } from '@/lib/constants';
 import { calcAvg, type Grade } from '@/lib/helpers';
 import { parseICS, generateDemoSchedule, type CalendarEvent } from '@/lib/ical-parser';
 import BottomNav, { type ViewId } from '@/components/BottomNav';
@@ -167,7 +167,7 @@ const StudentApp = () => {
   // Stats
   const stats = useMemo(() => {
     let p21 = 0, c21 = 0, p22 = 0, c22 = 0;
-    MODULES_CONFIG_S2.forEach(m => {
+    MODULES_CONFIG_GEII_S2.forEach(m => {
       const avg = parseFloat(calcAvg(s2Grades[m.id]) || '');
       if (!isNaN(avg)) {
         if (m.coef21 > 0) { p21 += avg * m.coef21; c21 += m.coef21; }
@@ -349,6 +349,7 @@ const StudentApp = () => {
             onModuleClick={setSelectedModule}
             onAbsenceUpdate={updateAbsence}
             onHistoryUpdate={updateHistory}
+            modules={MODULES_CONFIG_GEII_S2}
           />
         )}
 
