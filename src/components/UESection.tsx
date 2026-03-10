@@ -4,7 +4,7 @@ import type { ModuleConfig } from '@/lib/constants';
 
 interface UESectionProps {
   title: string;
-  ueKey: 'coef21' | 'coef22';
+  ueKey: string;
   modules: ModuleConfig[];
   gradesMap: Record<string, Grade[]>;
   absences: Record<string, number>;
@@ -15,7 +15,7 @@ interface UESectionProps {
 }
 
 const UESection = ({ title, ueKey, modules, gradesMap, absences, onModuleClick, onAbsenceUpdate, avg, search }: UESectionProps) => {
-  const filtered = modules.filter(m => m[ueKey] > 0).filter(m => {
+  const filtered = modules.filter(m => (m[ueKey as keyof ModuleConfig] as number) > 0).filter(m => {
     if (!search) return true;
     const q = search.toLowerCase();
     return m.label.toLowerCase().includes(q) || m.short.toLowerCase().includes(q) || m.id.toLowerCase().includes(q);
@@ -41,7 +41,7 @@ const UESection = ({ title, ueKey, modules, gradesMap, absences, onModuleClick, 
                 <div className="font-bold text-base">{module.label}</div>
                 <div className="text-xs text-muted-foreground flex gap-2 items-center mt-0.5">
                   <span className="opacity-70">{module.short}</span>
-                  <span className="bg-foreground/10 px-1.5 rounded text-[9px] text-foreground/80">Coef {module[ueKey]}</span>
+                  <span className="bg-foreground/10 px-1.5 rounded text-[9px] text-foreground/80">Coef {module[ueKey as keyof ModuleConfig] as number}</span>
                 </div>
               </div>
             </div>

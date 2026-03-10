@@ -37,7 +37,7 @@ const ClassementPage = () => {
       grades.forEach((g: { user_id: string; module_id: string; value: number; coef: number }) => {
         const mod = modules.find(m => m.id === g.module_id);
         if (!mod) return;
-        const c = mod.coef21 + mod.coef22;
+        const c = mod.coef1 + mod.coef2 + (mod.coef3 || 0);
         if (!userSums[g.user_id]) userSums[g.user_id] = { sum: 0, coef: 0 };
         userSums[g.user_id].sum += g.value * c;
         userSums[g.user_id].coef += c;

@@ -15,7 +15,7 @@ interface NotesViewProps {
   setVisibleUEs: (v: { 21: boolean; 22: boolean }) => void;
   s2Grades: Record<string, Grade[]>;
   absences: Record<string, number>;
-  stats: { avg21: string | null; avg22: string | null; global?: string | null };
+  stats: { avg21: string | null; avg22: string | null; global?: string | null; [key: string]: any };
   history: Record<string, Record<string, string>>;
   onModuleClick: (mod: ModuleConfig) => void;
   onAbsenceUpdate: (modId: string, delta: number) => void;
@@ -95,26 +95,7 @@ const NotesView = ({ semester, setSemester, visibleUEs, setVisibleUEs, s2Grades,
           {/* Absence Alert */}
           <AbsenceAlert absences={absences} modules={modules} />
 
-          {/* UE Toggles + Export */}
-          <div className="flex gap-2 mb-2">
-            <button
-              onClick={() => setVisibleUEs({ ...visibleUEs, 21: !visibleUEs[21] })}
-              className={`flex-1 py-3 rounded-xl text-xs font-bold border transition-all ${
-                visibleUEs[21] ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20' : 'bg-card text-muted-foreground border-border'
-              }`}
-            >
-              UE21 • Concevoir
-            </button>
-            <button
-              onClick={() => setVisibleUEs({ ...visibleUEs, 22: !visibleUEs[22] })}
-              className={`flex-1 py-3 rounded-xl text-xs font-bold border transition-all ${
-                visibleUEs[22] ? 'bg-foreground text-background border-foreground shadow-lg' : 'bg-card text-muted-foreground border-border'
-              }`}
-            >
-              UE22 • Vérifier
-            </button>
-          </div>
-
+          {/* Export */}
           <div className="flex gap-2 items-center">
             <div className="flex-1 relative">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -132,8 +113,24 @@ const NotesView = ({ semester, setSemester, visibleUEs, setVisibleUEs, s2Grades,
 
           <GPACalculator currentAvg={stats.global || null} history={history} />
 
-          {visibleUEs[21] && <UESection title="UE21 - Concevoir" ueKey="coef21" avg={stats.avg21} modules={modules} gradesMap={s2Grades} absences={absences} onModuleClick={onModuleClick} onAbsenceUpdate={onAbsenceUpdate} search={search} />}
-          {visibleUEs[22] && <UESection title="UE22 - Vérifier" ueKey="coef22" avg={stats.avg22} modules={modules} gradesMap={s2Grades} absences={absences} onModuleClick={onModuleClick} onAbsenceUpdate={onAbsenceUpdate} search={search} />}
+          {['coef1', 'coef2', 'coef3'].filter(k => modules.some(m => ((m as any)[k] as number) > 0)).map((k, i) => {
+             const ueNum = i + 1;
+             if (visibleUEs[ueNum as keyof typeof visibleUEs] === false) return null;
+             return (
+               <UESection 
+                 key={k} 
+                 title={`UE${semester}.${ueNum}`} 
+                 ueKey={k} 
+                 avg={ueNum === 1 ? stats.avg21 : stats.avg22} // Map legacy stats fields
+                 modules={modules} 
+                 gradesMap={s2Grades} 
+                 absences={absences} 
+                 onModuleClick={onModuleClick} 
+                 onAbsenceUpdate={onAbsenceUpdate} 
+                 search={search} 
+               />
+             );
+          })}
         </div>
       ) : (
         <div className="space-y-4">

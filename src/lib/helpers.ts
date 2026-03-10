@@ -1,4 +1,9 @@
-import { MODULES_CONFIG_GEII_S2, MODULES_CONFIG_TCSI_S2 } from './constants';
+import { 
+  MODULES_CONFIG_GEII_S1, 
+  MODULES_CONFIG_GEII_S2, 
+  MODULES_CONFIG_TCSI_S1, 
+  MODULES_CONFIG_TCSI_S2 
+} from './constants';
 
 export interface Grade {
   id: string;
@@ -27,7 +32,37 @@ export const getGradeColor = (val: string | null): string => {
 };
 
 export const getModuleName = (id: string): string => {
-  const allModules = [...MODULES_CONFIG_GEII_S2, ...MODULES_CONFIG_TCSI_S2];
+  const allModules = [
+    ...MODULES_CONFIG_GEII_S1, 
+    ...MODULES_CONFIG_GEII_S2, 
+    ...MODULES_CONFIG_TCSI_S1, 
+    ...MODULES_CONFIG_TCSI_S2
+  ];
   const mod = allModules.find(m => m.id === id);
   return mod ? mod.label : id;
+};
+
+// Auto Import Parser
+// Extracts R1.01 or S1.01 style codes and nearby grades from raw text.
+export const parseTranscript = (text: string, currentModules: any[]) => {
+  const extracted: { moduleId: string; grades: { value: string, name: string }[] }[] = [];
+  
+  // Basic regex assuming "R1.01 - Mathématiques : 14.5" or similar format
+  currentModules.forEach(mod => {
+    // Escape strings for regex
+    const regex = new RegExp(`(${mod.id.replace('.', '\\.')}|${mod.short})[\\s\\S]{0,50}?(\\d{1,2}[.,]\\d{1,3})`, 'gi');
+    let match;
+    const grades = [];
+    while ((match = regex.exec(text)) !== null) {
+      grades.push({
+        value: match[2].replace(',', '.'),
+        name: `Import Auto (${mod.short})`
+      });
+    }
+    if (grades.length > 0) {
+      extracted.push({ moduleId: mod.id, grades });
+    }
+  });
+
+  return extracted;
 };

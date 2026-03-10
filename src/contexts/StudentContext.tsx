@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { DEFAULT_ADE, MODULES_CONFIG_GEII_S2, MODULES_CONFIG_TCSI_S2, TASKS_DATA } from '@/lib/constants';
+import { DEFAULT_ADE, MODULES_CONFIG_GEII_S1, MODULES_CONFIG_GEII_S2, MODULES_CONFIG_TCSI_S1, MODULES_CONFIG_TCSI_S2, TASKS_DATA } from '@/lib/constants';
 import { calcAvg, type Grade } from '@/lib/helpers';
 import { parseICS, generateDemoSchedule, type CalendarEvent } from '@/lib/ical-parser';
 import type { ModuleConfig } from '@/lib/constants';
@@ -118,8 +118,11 @@ export function StudentProvider({ children }: { children: ReactNode }) {
   const [rankingTotal, setRankingTotal] = useState<number | null>(null);
 
   const modules = useMemo(() => {
-    return profile.filiere === 'TCSI' ? MODULES_CONFIG_TCSI_S2 : MODULES_CONFIG_GEII_S2;
-  }, [profile.filiere]);
+    if (profile.filiere === 'TCSI') {
+      return semester === 1 ? MODULES_CONFIG_TCSI_S1 : MODULES_CONFIG_TCSI_S2;
+    }
+    return semester === 1 ? MODULES_CONFIG_GEII_S1 : MODULES_CONFIG_GEII_S2;
+  }, [profile.filiere, semester]);
 
   const stats = useMemo(() => {
     try {
@@ -128,8 +131,8 @@ export function StudentProvider({ children }: { children: ReactNode }) {
       modules.forEach(m => {
         const avg = parseFloat(calcAvg(safeGrades[m.id]) || '');
         if (!isNaN(avg)) {
-          if (m.coef21 > 0) { p21 += avg * m.coef21; c21 += m.coef21; }
-          if (m.coef22 > 0) { p22 += avg * m.coef22; c22 += m.coef22; }
+          if (m.coef1 > 0) { p21 += avg * m.coef1; c21 += m.coef1; }
+          if (m.coef2 > 0) { p22 += avg * m.coef2; c22 += m.coef2; }
         }
       });
       const avg21 = c21 ? (p21 / c21).toFixed(2) : null;
@@ -280,8 +283,9 @@ export function StudentProvider({ children }: { children: ReactNode }) {
         if (!mod) return;
         
         if (!userAverages[g.user_id]) userAverages[g.user_id] = { sum: 0, coef: 0 };
-        userAverages[g.user_id].sum += g.value * (mod.coef21 + mod.coef22);
-        userAverages[g.user_id].coef += (mod.coef21 + mod.coef22);
+        const c = mod.coef1 + mod.coef2 + (mod.coef3 || 0);
+        userAverages[g.user_id].sum += g.value * c;
+        userAverages[g.user_id].coef += c;
       });
       const sorted = Object.entries(userAverages)
         .filter(([, v]) => v.coef > 0)

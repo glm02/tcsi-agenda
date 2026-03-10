@@ -170,8 +170,8 @@ const StudentApp = () => {
     MODULES_CONFIG_GEII_S2.forEach(m => {
       const avg = parseFloat(calcAvg(s2Grades[m.id]) || '');
       if (!isNaN(avg)) {
-        if (m.coef21 > 0) { p21 += avg * m.coef21; c21 += m.coef21; }
-        if (m.coef22 > 0) { p22 += avg * m.coef22; c22 += m.coef22; }
+        if (m.coef1 > 0) { p21 += avg * m.coef1; c21 += m.coef1; }
+        if (m.coef2 > 0) { p22 += avg * m.coef2; c22 += m.coef2; }
       }
     });
     const avg21 = c21 ? (p21 / c21).toFixed(2) : null;
