@@ -22,9 +22,10 @@ interface HomeViewProps {
   gradesMap: Record<string, Grade[]>;
   isAdmin: boolean;
   onAdminClick: () => void;
+  modules: any[];
 }
 
-const HomeView = ({ stats, taskStatus, events, quickNote, onNoteChange, onViewChange, gradesMap, isAdmin, onAdminClick }: HomeViewProps) => {
+const HomeView = ({ stats, taskStatus, events, quickNote, onNoteChange, onViewChange, gradesMap, isAdmin, onAdminClick, modules }: HomeViewProps) => {
   const currentWeekEvents = (() => {
     const now = new Date();
     const day = now.getDay();
@@ -38,86 +39,95 @@ const HomeView = ({ stats, taskStatus, events, quickNote, onNoteChange, onViewCh
   })();
 
   return (
-    <div className="space-y-4 page-enter">
+    <div className="space-y-4 page-enter w-full">
       {/* Quick Actions */}
       <QuickActions onViewChange={onViewChange} isAdmin={isAdmin} onAdminClick={onAdminClick} />
 
-      {/* Top widgets row */}
-      <div className="grid grid-cols-2 gap-3 h-40">
-        <div
-          className="fintech-card p-4 flex flex-col justify-between relative overflow-hidden group cursor-pointer hover:bg-card-hover border border-foreground/5 transition-colors"
-          onClick={() => onViewChange('NOTES')}
-        >
-          <div className="flex justify-between items-start z-10">
-            <div className="p-2 bg-primary/10 rounded-full text-primary"><Calculator size={20} /></div>
-            <ArrowUpRight size={16} className="text-muted-foreground" />
+      {/* Desktop Grid Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        
+        {/* Left Column (Main Metrics) */}
+        <div className="space-y-4 col-span-1 lg:col-span-2">
+          {/* Top widgets row */}
+          <div className="grid grid-cols-2 gap-4 h-40">
+            <div
+               className="fintech-card p-5 flex flex-col justify-between relative overflow-hidden group cursor-pointer hover:bg-card-hover border border-foreground/5 transition-colors"
+               onClick={() => onViewChange('NOTES')}
+             >
+               <div className="flex justify-between items-start z-10">
+                 <div className="p-3 bg-primary/10 rounded-2xl text-primary"><Calculator size={24} /></div>
+                 <ArrowUpRight size={20} className="text-muted-foreground" />
+               </div>
+               <div className="z-10">
+                 <div className="text-4xl font-black tracking-tighter">{stats.global || '--'}</div>
+                 <div className="text-xs text-muted-foreground font-bold uppercase tracking-wider mt-1">Moyenne Semestre</div>
+               </div>
+               <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-all" />
+             </div>
+             <WeatherWidget />
           </div>
-          <div className="z-10">
-            <div className="text-3xl font-bold tracking-tighter">{stats.global || '--'}</div>
-            <div className="text-xs text-muted-foreground font-bold uppercase tracking-wider mt-1">Moyenne S2</div>
+
+          {/* Second row */}
+          <div className="grid grid-cols-3 gap-4 h-36">
+            <UpcomingDeadline taskStatus={taskStatus} />
+            <StreakCounter taskStatus={taskStatus} />
+            <ExamCountdown />
           </div>
-          <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-primary/10 rounded-full blur-2xl group-hover:bg-primary/20 transition-all" />
-        </div>
-        <WeatherWidget />
-      </div>
 
-      {/* Second row */}
-      <div className="grid grid-cols-3 gap-3 h-36">
-        <UpcomingDeadline taskStatus={taskStatus} />
-        <StreakCounter taskStatus={taskStatus} />
-        <ExamCountdown />
-      </div>
-
-      {/* Pomodoro + Progress */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="fintech-card p-4 border border-foreground/5 h-44">
-          <PomodoroWidget />
-        </div>
-        <div className="flex flex-col gap-3">
-          <SemesterProgress />
-        </div>
-      </div>
-
-      {/* Grade Chart */}
-      <GradeChart gradesMap={gradesMap} />
-
-      {/* Daily Quote */}
-      <DailyQuote />
-
-      {/* Weekly Planning */}
-      <div className="fintech-card p-5 border border-foreground/5">
-        <h3 className="font-bold mb-4 flex items-center gap-2 text-sm uppercase tracking-wider text-muted-foreground">
-          <Zap size={14} /> Mon Planning
-        </h3>
-        {currentWeekEvents.length > 0 ? (
-          currentWeekEvents.slice(0, 4).map((e, i) => (
-            <div key={i} className="flex gap-4 mb-4 last:mb-0 items-center">
-              <div className="text-xs font-bold text-muted-foreground w-10 text-right">
-                {e.start.getHours()}h{String(e.start.getMinutes()).padStart(2, '0')}
-              </div>
-              <div className="w-1 h-8 rounded-full bg-primary/50" />
-              <div className="flex-1">
-                <div className="font-bold text-sm truncate">{e.summary}</div>
-                <div className="text-xs text-muted-foreground truncate">{e.location}</div>
-              </div>
+          {/* Chart & Pomodoro */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <GradeChart gradesMap={gradesMap} modules={modules} />
+            <div className="fintech-card p-4 border border-foreground/5 min-h-[220px]">
+              <PomodoroWidget />
             </div>
-          ))
-        ) : (
-          <div className="text-center text-xs text-muted-foreground py-6 bg-foreground/5 rounded-xl">Rien à l'horizon 🏖️</div>
-        )}
-      </div>
-
-      {/* Quick Note */}
-      <div className="fintech-card p-4 flex flex-col gap-2 border border-foreground/5 min-h-[120px]">
-        <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-          <Edit3 size={14} /> Mémo rapide
+          </div>
         </div>
-        <textarea
-          value={quickNote}
-          onChange={e => onNoteChange(e.target.value)}
-          placeholder="Code, salle, mémo..."
-          className="bg-transparent border-none outline-none text-xs resize-none h-full w-full placeholder-foreground/20 leading-relaxed font-medium flex-1"
-        />
+
+        {/* Right Column (Sidebar-like details) */}
+        <div className="space-y-4 col-span-1">
+          <div className="fintech-card p-5 border border-foreground/5">
+            <h3 className="font-bold mb-4 flex items-center gap-2 text-sm uppercase tracking-wider text-muted-foreground">
+              <Zap size={14} /> Mon Planning
+            </h3>
+            {currentWeekEvents.length > 0 ? (
+              <div className="space-y-4">
+              {currentWeekEvents.slice(0, 5).map((e, i) => (
+                <div key={i} className="flex gap-4 items-center p-3 rounded-2xl bg-foreground/5 hover:bg-foreground/10 transition-colors">
+                  <div className="text-xs font-bold text-muted-foreground w-12 text-right shrink-0">
+                    {e.start.getHours()}h{String(e.start.getMinutes()).padStart(2, '0')}
+                  </div>
+                  <div className="w-1 h-10 rounded-full bg-primary/50 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-sm truncate">{e.summary}</div>
+                    <div className="text-xs text-muted-foreground truncate">{e.location}</div>
+                  </div>
+                </div>
+              ))}
+              </div>
+            ) : (
+              <div className="text-center text-xs text-muted-foreground py-10 bg-foreground/5 rounded-2xl">Rien à l'horizon 🏖️</div>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-4">
+            <SemesterProgress />
+          </div>
+
+          {/* Quick Note */}
+          <div className="fintech-card p-5 flex flex-col gap-3 border border-foreground/5 min-h-[160px]">
+             <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+               <Edit3 size={14} /> Mémo rapide
+             </div>
+             <textarea
+               value={quickNote}
+               onChange={e => onNoteChange(e.target.value)}
+               placeholder="Code Crous, salle, liste de courses..."
+               className="bg-transparent border-none outline-none text-sm resize-none h-full w-full placeholder-foreground/20 leading-relaxed font-medium flex-1"
+             />
+          </div>
+
+          <DailyQuote />
+        </div>
       </div>
     </div>
   );

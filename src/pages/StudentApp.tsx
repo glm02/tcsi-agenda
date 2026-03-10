@@ -15,6 +15,7 @@ import TimeGreeting from '@/components/TimeGreeting';
 import type { ModuleConfig } from '@/lib/constants';
 import { Calendar, X, Shield, Info, AlertTriangle, CheckCircle } from 'lucide-react';
 import AgendaList from '@/components/AgendaList';
+import Sidebar from '@/components/Sidebar';
 import { useNavigate } from 'react-router-dom';
 
 const StudentApp = () => {
@@ -333,6 +334,7 @@ const StudentApp = () => {
             gradesMap={s2Grades}
             isAdmin={isAdmin}
             onAdminClick={() => navigate('/admin')}
+            modules={MODULES_CONFIG_GEII_S2}
           />
         )}
 
@@ -373,7 +375,10 @@ const StudentApp = () => {
           />
         )}
       </main>
-      <BottomNav active={view} setView={setView} />
+      
+      <div className="md:hidden">
+        <BottomNav active={view} setView={setView} />
+      </div>
     </div>
   );
 };

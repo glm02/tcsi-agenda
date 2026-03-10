@@ -1,5 +1,5 @@
 import express from 'express';
-import { Telegraf } from 'telegraf';
+import { Telegraf, Markup } from 'telegraf';
 import cron from 'node-cron';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -58,38 +58,73 @@ const getCrousMenu = async (crousCode) => {
 if (botToken) {
   bot = new Telegraf(botToken);
 
-  bot.start((ctx) => {
-    ctx.reply('👋 Bonjour ! Je suis l\'assistant de GEII-OS.\n\nAssocie ton compte Telegram en envoyant ton email étudiant.\n\nTape /help pour voir ce que je peux faire !');
-  });
+  const mainMenu = Markup.inlineKeyboard([
+    [Markup.button.callback('🍽️ Menu du CROUS', 'menu_crous')],
+    [Markup.button.callback('📅 Mes QCM & Rappels', 'menu_qcm')],
+    [Markup.button.callback('✅ Statut du Serveur', 'menu_status')]
+  ]);
 
-  bot.help((ctx) => {
+  bot.start((ctx) => {
     ctx.reply(
-      '📚 *Commandes disponibles* :\n\n' +
-      '/crous - Obtenir le menu de ton CROUS favori\n' +
-      '/qcm - Voir tes QCM en attente\n' +
-      '/status - Vérifier que l\'OS GEII fonctionne',
-      { parse_mode: 'Markdown' }
+      '👋 Bonjour ! Je suis l\'assistant de GEII-OS.\n\nAssocie ton compte Telegram à l\'URL web ou utilise le menu ci-dessous pour interagir avec moi.',
+      mainMenu
     );
   });
 
+  bot.help((ctx) => {
+    ctx.reply('📚 *Que puis-je faire pour toi ?*', { parse_mode: 'Markdown', ...mainMenu });
+  });
+
   bot.command('status', (ctx) => {
-    ctx.reply('✅ Le serveur GEII-OS est en ligne et opérationnel !');
+    ctx.reply('✅ Le serveur GEII-OS est en ligne et opérationnel !', mainMenu);
   });
 
-  bot.command('crous', async (ctx) => {
-    if (!supabase) return ctx.reply('Erreur: Base de données non connectée.');
-    // Ideally, we find the user by their telegram chat id
-    const { data: user } = await supabase.from('profiles').select('crous_name').eq('telegram_chat_id', String(ctx.chat.id)).single();
-    const crousCode = user?.crous_name || '611'; // default to Manu
-    const menu = await getCrousMenu(crousCode);
-    ctx.reply(menu, { parse_mode: 'Markdown' });
+  const sendCrousMenuSelection = (ctx) => {
+    const crousMenu = Markup.inlineKeyboard([
+      [Markup.button.callback('🍽️ Puvis de Chavannes', 'crous_611')],
+      [Markup.button.callback('🍽️ Les Quais', 'crous_612')],
+      [Markup.button.callback('🍽️ La Manufacture (Bourg)', 'crous_649')],
+      [Markup.button.callback('⬅️ Retour', 'menu_main')]
+    ]);
+    if (ctx.callbackQuery) {
+      ctx.editMessageText('Sélectionne ton restaurant Universitaire :', crousMenu);
+    } else {
+      ctx.reply('Sélectionne ton restaurant Universitaire :', crousMenu);
+    }
+  };
+
+  const sendQcmMenu = (ctx) => {
+    const text = '📝 *Vos Prochaines dates* :\n\n1. Rendu Projet (Semaine prochaine)\n2. DS Math (Lundi)';
+    if (ctx.callbackQuery) {
+      ctx.editMessageText(text, { parse_mode: 'Markdown', ...mainMenu });
+    } else {
+      ctx.reply(text, { parse_mode: 'Markdown', ...mainMenu });
+    }
+  };
+
+  bot.command('crous', sendCrousMenuSelection);
+  bot.command('qcm', sendQcmMenu);
+
+  bot.action('menu_main', (ctx) => {
+    ctx.editMessageText('👋 Menu Principal :', mainMenu);
   });
 
-  bot.command('qcm', async (ctx) => {
-    if (!supabase) return ctx.reply('Erreur DB.');
-    // Mocking real data until tasks DB is fully structured
-    ctx.reply('📝 *Vos Prochaines dates* :\n\n1. Rendu Projet (Semaine prochaine)\n2. DS Math (Lundi)', { parse_mode: 'Markdown' });
+  bot.action('menu_status', (ctx) => {
+    ctx.editMessageText('✅ Le serveur GEII-OS est en ligne et opérationnel !', mainMenu);
   });
+
+  bot.action('menu_qcm', sendQcmMenu);
+  bot.action('menu_crous', sendCrousMenuSelection);
+
+  const handleCrousAction = async (ctx, code, name) => {
+    ctx.editMessageText(`⏳ Récupération du menu pour ${name}...`);
+    const menu = await getCrousMenu(code);
+    ctx.reply(menu, { parse_mode: 'Markdown', ...mainMenu });
+  };
+
+  bot.action('crous_611', (ctx) => handleCrousAction(ctx, '611', 'Puvis'));
+  bot.action('crous_612', (ctx) => handleCrousAction(ctx, '612', 'Les Quais'));
+  bot.action('crous_649', (ctx) => handleCrousAction(ctx, '649', 'La Manufacture'));
 
   // Launch bot
   bot.launch().then(() => {
